@@ -6,6 +6,7 @@ import sys
 import airflow
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.contrib.operators.ssh_operator import SSHOperator
 from datetime import datetime,timedelta
 
@@ -34,6 +35,16 @@ dag = DAG(
     description='data updating')
 
 # -------------------------------------------------------------------------------
+# 添加上游依赖 --
+pre_depend = ExternalTaskSensor(
+    task_id='up-dependent-pre_demo',
+    external_dag_id='pre_demo',
+    external_task_id='end',
+    trigger_rule='all_done',
+    dag=dag
+)
+
+
 start = DummyOperator(
     task_id='start',
     dag=dag
@@ -54,5 +65,6 @@ demo = SSHOperator(
     dag=dag
 )
 
+pre_depend >> start
 
 start >> demo >> end
